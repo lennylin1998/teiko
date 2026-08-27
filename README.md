@@ -24,7 +24,7 @@ make dashboard
 
 Streamlit prints the local URL; in GitHub Codespaces, open its forwarded port
 from the Ports panel. There's also a hosted version on Streamlit Cloud [here
-](http://localhost:8501/).
+](https://rkd23fzswphslii8jj7skz.streamlit.app/).
 
 The Streamlit dashboard reads the generated Part 2–3 files and queries SQLite
 for Part 4. Its cohort explorer defaults to melanoma, miraclib, PBMC, and day 0,
