@@ -9,12 +9,13 @@ from cell_pipeline.frequencies import export_relative_frequencies as export_freq
 
 ROOT = Path(__file__).resolve().parent
 DATABASE_PATH = ROOT / "cell-count.db"
-OUTPUT_PATH = ROOT / "relative-frequency.csv"
+OUTPUT_PATH = ROOT / "docs" / "data" / "relative-frequency.csv"
 
 
 def export_relative_frequencies() -> None:
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     row_count = export_frequency_file(DATABASE_PATH, OUTPUT_PATH)
-    print(f"Created {OUTPUT_PATH.name}: {row_count:,} rows.")
+    print(f"Created docs/data/{OUTPUT_PATH.name}: {row_count:,} rows.")
 
 
 def main() -> None:

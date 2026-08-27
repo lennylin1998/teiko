@@ -1,4 +1,4 @@
-.PHONY: setup load part2 pipeline dashboard test check
+.PHONY: setup load part2 part3 pipeline dashboard test check
 
 PYTHON ?= python3
 PORT ?= 8000
@@ -12,9 +12,10 @@ load:
 part2:
 	$(PYTHON) analyze_frequencies.py
 
-pipeline: load part2
-	mkdir -p docs/data
-	cp relative-frequency.csv docs/data/relative-frequency.csv
+part3:
+	$(PYTHON) analyze_responders.py
+
+pipeline: load part2 part3
 
 dashboard:
 	$(PYTHON) -m http.server $(PORT) --bind 0.0.0.0 --directory docs

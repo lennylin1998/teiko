@@ -1,8 +1,8 @@
 # Immune Cell-Count Analysis
 
-This repository implements Parts 1 and 2 of the analysis pipeline: converting
-the supplied CSV into a validated SQLite database and exporting each immune
-cell population's relative frequency within its sample.
+This repository implements Parts 1–3 of the analysis pipeline: converting the
+supplied CSV into a validated SQLite database, exporting immune-cell relative
+frequencies, and comparing miraclib responders with non-responders.
 
 ## Setup and data loading
 
@@ -81,19 +81,30 @@ The pipeline is:
 cell-count.csv -> load_data.py -> validated cell-count.db
                                       |
                                       v
-                    relative-frequency.csv
+                    docs/data/relative-frequency.csv
 ```
 
 `make pipeline` runs the relative-frequency analysis only after Part 1 succeeds.
-The output has the columns `sample`, `total_count`, `population`, `count`, and
-`percentage`, with 52,500 rows (five populations for each of 10,500 samples).
-`analyze_frequencies.py` calculates totals with `SUM(count) OVER (PARTITION BY
-sample)`. Pipeline correctness—including database shape, source-to-database
-mapping, frequency totals, percentage sums, and CSV output—is covered by pytest.
+It writes `docs/data/relative-frequency.csv` for direct use by the static
+dashboard. The output has the columns `sample`, `total_count`, `population`,
+`count`, and `percentage`, with 52,500 rows (five populations for each of 10,500
+samples). `analyze_frequencies.py` calculates totals with `SUM(count) OVER
+(PARTITION BY sample)`. Pipeline correctness—including database shape,
+source-to-database mapping, frequency totals, percentage sums, and CSV
+output—is covered by pytest.
+
+Part 3 filters to melanoma subjects treated with miraclib with PBMC samples,
+then averages days 0, 7, and 14 within each subject and population. It writes
+`docs/data/responder-boxplots.png` (five response-group boxplot pairs) and
+`docs/data/responder-statistics.csv` (five Welch t-tests with raw p-values,
+group means, differences, and subject counts), ready for the static dashboard.
+A p-value below 0.05 is reported as significant. The same subject-level table
+supplies both the plot and tests.
 
 ## Code structure
 
-`load_data.py` and `analyze_frequencies.py` are thin executable entry points.
+`load_data.py`, `analyze_frequencies.py`, and `analyze_responders.py` are thin
+executable entry points.
 The `cell_pipeline` package separates source validation, transformations,
 database loading, schema definitions, and frequency analysis into reusable
 modules. The `tests/` directory verifies those modules with small fixtures and

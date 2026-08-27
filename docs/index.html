@@ -3,37 +3,58 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Interactive immune cell-count analysis dashboard">
   <title>Loblaw Bio — Immune Cell Analysis</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <button class="menu-button" id="menu-button" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
-  <aside class="sidebar" id="sidebar">
-    <div class="brand"><span class="brand-mark">LB</span><div><strong>Loblaw Bio</strong><small>Clinical analytics</small></div></div>
-    <nav aria-label="Analysis sections">
-      <a href="#part2" data-view="part2"><span>02</span><div>Data Overview<small>Cell frequencies</small></div></a>
-      <a href="#part3" data-view="part3"><span>03</span><div>Statistical Analysis<small>Response comparison</small></div></a>
-      <a href="#part4" data-view="part4"><span>04</span><div>Subset Analysis<small>Baseline cohort</small></div></a>
-    </nav>
-    <p class="sidebar-note">Immune cell population analysis for the miraclib clinical trial.</p>
+  <button class="btn menu-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-label="Open navigation">☰</button>
+  <aside class="offcanvas-lg offcanvas-start sidebar" id="sidebar" tabindex="-1">
+    <div class="offcanvas-header d-lg-none"><h2 class="offcanvas-title fs-5">Loblaw Bio</h2><button class="btn-close btn-close-white" type="button" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+    <div class="offcanvas-body d-flex flex-column p-4">
+      <div class="brand d-none d-lg-flex align-items-center gap-3 mb-5"><span class="brand-mark">LB</span><div><strong class="d-block">Loblaw Bio</strong><small>Clinical analytics</small></div></div>
+      <nav class="nav nav-pills flex-column gap-2" aria-label="Analysis sections">
+        <a class="nav-link" href="#part2" data-view="part2"><span class="nav-number">02</span><span>Data Overview<small>Cell frequencies</small></span></a>
+        <a class="nav-link" href="#part3" data-view="part3"><span class="nav-number">03</span><span>Statistical Analysis<small>Response comparison</small></span></a>
+        <a class="nav-link" href="#part4" data-view="part4"><span class="nav-number">04</span><span>Subset Analysis<small>Baseline cohort</small></span></a>
+      </nav>
+      <p class="sidebar-note small mt-auto mb-0">Immune cell population analysis for the miraclib clinical trial.</p>
+    </div>
   </aside>
-  <main>
+  <main class="dashboard-main"><div class="container-fluid px-0">
     <section class="view" id="part2">
-      <header class="page-header"><div><p class="eyebrow">Part 2 · Initial analysis</p><h1>Cell population frequencies</h1></div><a class="download" href="data/relative-frequency.csv" download>Download CSV</a></header>
-      <p class="intro">Relative frequency of each immune cell population within every sample.</p>
-      <div class="metrics" aria-label="Dataset summary"><article><span>Samples</span><strong id="sample-count">—</strong></article><article><span>Populations</span><strong id="population-count">—</strong></article><article><span>Measurements</span><strong id="row-count">—</strong></article></div>
-      <section class="table-card">
-        <div class="controls"><label>Search samples<input id="sample-search" type="search" placeholder="e.g. sample00042"></label><label>Population<select id="population-filter"><option value="">All populations</option></select></label><label>Rows per page<select id="page-size"><option>25</option><option selected>50</option><option>100</option></select></label></div>
-        <div class="status" id="status" role="status">Loading relative-frequency data…</div>
-        <div class="table-wrap"><table><thead><tr><th><button data-sort="sample">Sample</button></th><th><button data-sort="total_count">Total count</button></th><th><button data-sort="population">Population</button></th><th><button data-sort="count">Count</button></th><th><button data-sort="percentage">Percentage</button></th></tr></thead><tbody id="frequency-body"></tbody></table></div>
-        <footer class="pagination"><span id="page-summary"></span><div><button id="previous-page" type="button">Previous</button><button id="next-page" type="button">Next</button></div></footer>
+      <header class="page-header"><div><p class="eyebrow mb-1">Part 2 · Initial analysis</p><h1>Cell population frequencies</h1></div><a class="btn btn-brand" href="data/relative-frequency.csv" download>Download CSV</a></header>
+      <p class="lead intro mt-3">Relative frequency of each immune cell population within every sample.</p>
+      <div class="row g-3 my-3" aria-label="Dataset summary">
+        <div class="col-md-4"><article class="metric-card card h-100"><div class="card-body"><span>Samples</span><strong id="sample-count">—</strong></div></article></div>
+        <div class="col-md-4"><article class="metric-card card h-100"><div class="card-body"><span>Populations</span><strong id="population-count">—</strong></div></article></div>
+        <div class="col-md-4"><article class="metric-card card h-100"><div class="card-body"><span>Measurements</span><strong id="row-count">—</strong></div></article></div>
+      </div>
+      <section class="card shadow-sm overflow-hidden">
+        <div class="card-body border-bottom"><div class="row g-3">
+          <label class="col-md-6 form-label mb-0">Search samples<input class="form-control mt-1" id="sample-search" type="search" placeholder="e.g. sample00042"></label>
+          <label class="col-6 col-md-3 form-label mb-0">Population<select class="form-select mt-1" id="population-filter"><option value="">All populations</option></select></label>
+          <label class="col-6 col-md-3 form-label mb-0">Rows per page<select class="form-select mt-1" id="page-size"><option>25</option><option selected>50</option><option>100</option></select></label>
+        </div></div>
+        <div class="status text-secondary text-center p-4" id="status" role="status">Loading relative-frequency data…</div>
+        <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th><button data-sort="sample">Sample</button></th><th><button data-sort="total_count">Total count</button></th><th><button data-sort="population">Population</button></th><th><button data-sort="count">Count</button></th><th><button data-sort="percentage">Percentage</button></th></tr></thead><tbody id="frequency-body"></tbody></table></div>
+        <footer class="card-footer d-flex justify-content-between align-items-center py-3"><span class="text-secondary" id="page-summary"></span><div class="btn-group"><button class="btn btn-outline-secondary btn-sm" id="previous-page">Previous</button><button class="btn btn-outline-secondary btn-sm" id="next-page">Next</button></div></footer>
       </section>
     </section>
-    <section class="view placeholder" id="part3" hidden><p class="eyebrow">Part 3 · Statistical analysis</p><h1>Predicting treatment response</h1><div class="coming-soon"><span>03</span><h2>Analysis coming soon</h2><p>This view will compare immune-cell frequencies in melanoma PBMC samples from miraclib responders and non-responders, including population boxplots and statistical significance tests.</p></div></section>
-    <section class="view placeholder" id="part4" hidden><p class="eyebrow">Part 4 · Data subset analysis</p><h1>Baseline cohort exploration</h1><div class="coming-soon"><span>04</span><h2>Analysis coming soon</h2><p>This view will summarize baseline melanoma PBMC samples treated with miraclib by project, response status, and sex.</p></div></section>
-  </main>
-  <div class="scrim" id="scrim"></div>
+    <section class="view" id="part3" hidden>
+      <header class="page-header"><div><p class="eyebrow mb-1">Part 3 · Statistical analysis</p><h1>Responder comparison</h1></div><a class="btn btn-brand" href="data/responder-statistics.csv" download>Download statistics</a></header>
+      <p class="lead intro mt-3">Subject-level relative frequencies for melanoma PBMC samples following miraclib treatment. Repeated measurements from days 0, 7, and 14 are averaged before comparison.</p>
+      <div class="row g-3 my-3">
+        <div class="col-md-4"><article class="metric-card card h-100"><div class="card-body"><span>Responders</span><strong id="responder-count">—</strong></div></article></div>
+        <div class="col-md-4"><article class="metric-card card h-100"><div class="card-body"><span>Non-responders</span><strong id="nonresponder-count">—</strong></div></article></div>
+        <div class="col-md-4"><article class="metric-card card h-100"><div class="card-body"><span>Significant populations</span><strong id="significant-count">—</strong></div></article></div>
+      </div>
+      <section class="card shadow-sm my-3"><div class="card-body"><div class="result-header"><div><h2 class="h4">Relative-frequency distributions</h2><p class="text-secondary mb-0">One mean value per subject. Blue indicates responders; orange indicates non-responders.</p></div><a class="link-brand fw-semibold text-nowrap" href="data/responder-boxplots.png" download>Download PNG</a></div><img class="img-fluid border rounded mt-3" src="data/responder-boxplots.png" alt="Responder and non-responder boxplots by immune-cell population"></div></section>
+      <section class="card shadow-sm overflow-hidden"><div class="card-body border-bottom"><h2 class="h4">Welch t-test results</h2><p class="text-secondary mb-0">Five two-sided tests. Raw p-values below 0.05 are significant.</p></div><div class="status text-secondary text-center p-4" id="part3-status">Loading responder statistics…</div><div class="table-responsive"><table class="table align-middle mb-0 statistics-table"><thead class="table-light"><tr><th>Population</th><th>Responder mean</th><th>Non-responder mean</th><th>Difference</th><th>t statistic</th><th>p-value</th><th>Significant</th></tr></thead><tbody id="statistics-body"></tbody></table></div></section>
+    </section>
+    <section class="view" id="part4" hidden><p class="eyebrow mb-1">Part 4 · Data subset analysis</p><h1>Baseline cohort exploration</h1><div class="card shadow-sm mt-5 placeholder-card"><div class="card-body p-5"><span>04</span><h2 class="h4 mt-3">Analysis coming soon</h2><p class="text-secondary mb-0">This view will summarize baseline melanoma PBMC samples treated with miraclib.</p></div></div></section>
+  </div></main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
   <script src="app.js"></script>
 </body>
 </html>
