@@ -23,7 +23,8 @@ make dashboard
 ```
 
 Streamlit prints the local URL; in GitHub Codespaces, open its forwarded port
-from the Ports panel.
+from the Ports panel. There's also a hosted version on Streamlit Cloud [here
+](http://localhost:8501/).
 
 The Streamlit dashboard reads the generated Part 2–3 files and queries SQLite
 for Part 4. Its cohort explorer defaults to melanoma, miraclib, PBMC, and day 0,
@@ -31,16 +32,7 @@ while allowing any available condition, treatment (including quintazide), sample
 type, and treatment day to be selected.
 
 Equivalently, after installing `requirements.txt`, run `python load_data.py`.
-The loader creates `cell-count.db` in the repository root. It is deterministic
-and safe to rerun: each run builds a temporary database and replaces the old
-one only after a successful load, so rows never accumulate.
-
-Runtime validation is limited to the external input, `cell-count.csv`. It checks
-the source column layout, required values, integer fields, nonnegative population
-counts, positive per-sample totals, response values, 10,500 unique sample IDs,
-and treatment days 0/7/14. Source responses are converted from
-`yes`/`no`/blank to `1`/`0`/SQL `NULL`. The generated database also enforces its
-schema through SQLite constraints.
+The loader creates `cell-count.db` in the repository root.
 
 ## Database schema
 
@@ -118,11 +110,3 @@ database loading, schema definitions, and frequency analysis into reusable
 modules. The `tests/` directory verifies those modules with small fixtures and
 temporary databases and files. Run the tests with `make test`, or run tests and
 the production pipeline together with `make check`.
-
-## Archived static dashboard
-
-The earlier static dashboard remains in `docs/` and is archived on GitHub Pages
-at [https://lennylin1998.github.io/teiko/](https://lennylin1998.github.io/teiko/).
-It is retained for historical reference; Streamlit is the supported dashboard.
-To view the archived version locally, run `make static-dashboard` and open
-`http://localhost:8000` (or set another port with `PORT=3000`).
