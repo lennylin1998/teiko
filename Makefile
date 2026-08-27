@@ -1,4 +1,4 @@
-.PHONY: setup load part2 part3 pipeline dashboard test check
+.PHONY: setup load part2 part3 part4 pipeline dashboard static-dashboard test check
 
 PYTHON ?= python3
 PORT ?= 8000
@@ -15,9 +15,15 @@ part2:
 part3:
 	$(PYTHON) analyze_responders.py
 
-pipeline: load part2 part3
+part4:
+	$(PYTHON) analyze_cohort.py
+
+pipeline: load part2 part3 part4
 
 dashboard:
+	$(PYTHON) -m streamlit run streamlit_app.py
+
+static-dashboard:
 	$(PYTHON) -m http.server $(PORT) --bind 0.0.0.0 --directory docs
 
 test:

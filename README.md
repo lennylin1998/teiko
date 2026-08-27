@@ -1,8 +1,9 @@
 # Immune Cell-Count Analysis
 
-This repository implements Parts 1–3 of the analysis pipeline: converting the
+This repository implements Parts 1–4 of the analysis pipeline: converting the
 supplied CSV into a validated SQLite database, exporting immune-cell relative
-frequencies, and comparing miraclib responders with non-responders.
+frequencies, comparing miraclib responders with non-responders, and exploring
+filtered cohorts.
 
 ## Setup and data loading
 
@@ -21,10 +22,13 @@ Start the interactive dashboard after generating the outputs:
 make dashboard
 ```
 
-Open `http://localhost:8000`. To choose another port, run `make dashboard
-PORT=3000`. In GitHub Codespaces, open the forwarded port from the Ports panel.
-The static website is live on GitHub Pages:
-[https://lennylin1998.github.io/teiko/](https://lennylin1998.github.io/teiko/).
+Streamlit prints the local URL; in GitHub Codespaces, open its forwarded port
+from the Ports panel.
+
+The Streamlit dashboard reads the generated Part 2–3 files and queries SQLite
+for Part 4. Its cohort explorer defaults to melanoma, miraclib, PBMC, and day 0,
+while allowing any available condition, treatment (including quintazide), sample
+type, and treatment day to be selected.
 
 Equivalently, after installing `requirements.txt`, run `python load_data.py`.
 The loader creates `cell-count.db` in the repository root. It is deterministic
@@ -70,43 +74,55 @@ added because Part 1 has no measured query-performance need for them.
 
 A single table keeps this modest, analysis-oriented dataset easy to query while
 normalizing its repeated cell-measurement concept. Sample metadata is intentionally
-repeated across population rows to avoid joins at the current scale. At substantially larger scale, reusable
-entities such as projects, subjects, and samples could be normalized into
-separate relational tables, with cell measurements stored in a related fact
-table. Indexes and partitioning could then be chosen for measured query patterns.
+repeated across population rows to avoid joins at the current scale. 
 
-The pipeline is:
+At a larger scale, projects, subjects, and samples could use separate linked tables, cell counts could live in a measurement fact table, a composite index on condition, treatment, sample type, and treatment day could accelerate cohort filters, and data could be partitioned by project when project-specific queries dominate.
 
-```text
-cell-count.csv -> load_data.py -> validated cell-count.db
-                                      |
-                                      v
-                    docs/data/relative-frequency.csv
-```
 
-`make pipeline` runs the relative-frequency analysis only after Part 1 succeeds.
-It writes `docs/data/relative-frequency.csv` for direct use by the static
-dashboard. The output has the columns `sample`, `total_count`, `population`,
-`count`, and `percentage`, with 52,500 rows (five populations for each of 10,500
-samples). `analyze_frequencies.py` calculates totals with `SUM(count) OVER
-(PARTITION BY sample)`. Pipeline correctness—including database shape,
-source-to-database mapping, frequency totals, percentage sums, and CSV
-output—is covered by pytest.
+`make pipeline` runs the entire data-analysis pipeline in order and generates
+all required outputs:
 
-Part 3 filters to melanoma subjects treated with miraclib with PBMC samples,
-then averages days 0, 7, and 14 within each subject and population. It writes
-`docs/data/responder-boxplots.png` (five response-group boxplot pairs) and
-`docs/data/responder-statistics.csv` (five Welch t-tests with raw p-values,
-group means, differences, and subject counts), ready for the static dashboard.
-A p-value below 0.05 is reported as significant. The same subject-level table
-supplies both the plot and tests.
+- **Part 1:** `cell-count.db`, the validated SQLite database.
+- **Part 2:** `docs/data/relative-frequency.csv`, the per-sample cell-population frequencies.
+- **Part 3:** `docs/data/responder-boxplots.png` and `docs/data/responder-statistics.csv`, the response-group visualization and Welch t-test results.
+- **Part 4:** `docs/data/cohort-summary.csv`, `docs/data/samples-by-project.csv`, `docs/data/subjects-by-response.csv`, and `docs/data/subjects-by-sex.csv`, the default baseline-cohort summaries.
+
+Part 1 validates `cell-count.csv`, reshapes its five population columns into
+long-form measurement rows, and loads them into `cell-count.db`; later pipeline
+steps run only after this database is created successfully.
+
+Part 2 calculates each sample total with `SUM(count) OVER (PARTITION BY sample)`
+and exports the columns `sample`, `total_count`, `population`, `count`, and
+`percentage`, producing 52,500 rows—five populations for each of 10,500 samples.
+
+Part 3 selects melanoma subjects receiving miraclib with PBMC samples, averages
+days 0, 7, and 14 within each subject and population, creates five responder
+versus non-responder boxplot pairs, and runs a two-sided Welch t-test for every
+population, reporting raw p-values below 0.05 as significant.
+
+Part 4 queries one distinct metadata row per sample for the default melanoma,
+miraclib, PBMC, day-0 cohort, then counts samples by project and distinct
+subjects by response and sex; the dashboard reuses these functions with
+interactive condition, treatment, sample-type, and treatment-day filters.
+
+Pytest covers the pipeline's database shape, source mapping, frequency totals,
+percentage sums, cohort filtering, distinct-subject summaries, and output data.
 
 ## Code structure
 
-`load_data.py`, `analyze_frequencies.py`, and `analyze_responders.py` are thin
+`load_data.py`, `analyze_frequencies.py`, `analyze_responders.py`, and
+`analyze_cohort.py` are thin
 executable entry points.
 The `cell_pipeline` package separates source validation, transformations,
 database loading, schema definitions, and frequency analysis into reusable
 modules. The `tests/` directory verifies those modules with small fixtures and
 temporary databases and files. Run the tests with `make test`, or run tests and
 the production pipeline together with `make check`.
+
+## Archived static dashboard
+
+The earlier static dashboard remains in `docs/` and is archived on GitHub Pages
+at [https://lennylin1998.github.io/teiko/](https://lennylin1998.github.io/teiko/).
+It is retained for historical reference; Streamlit is the supported dashboard.
+To view the archived version locally, run `make static-dashboard` and open
+`http://localhost:8000` (or set another port with `PORT=3000`).
