@@ -23,6 +23,11 @@ STATISTICS_COLUMNS = [
     "nonresponder_mean", "mean_difference", "t_statistic", "p_value",
     "significant",
 ]
+STATISTICS_DECIMAL_PLACES = 6
+STATISTICS_FLOAT_COLUMNS = [
+    "responder_mean", "nonresponder_mean", "mean_difference",
+    "t_statistic", "p_value",
+]
 
 
 def build_subject_level_cohort(
@@ -100,6 +105,9 @@ def calculate_statistics(subject_level: pd.DataFrame) -> pd.DataFrame:
             "p_value": float(test.pvalue),
         })
     statistics = pd.DataFrame(rows)
+    statistics[STATISTICS_FLOAT_COLUMNS] = statistics[STATISTICS_FLOAT_COLUMNS].round(
+        STATISTICS_DECIMAL_PLACES
+    )
     statistics["significant"] = statistics["p_value"] < 0.05
     return statistics[STATISTICS_COLUMNS]
 

@@ -4,6 +4,8 @@ import pandas as pd
 import pytest
 
 from cell_pipeline.responder_analysis import (
+    STATISTICS_DECIMAL_PLACES,
+    STATISTICS_FLOAT_COLUMNS,
     STATISTICS_COLUMNS,
     build_subject_level_cohort,
     calculate_statistics,
@@ -59,6 +61,10 @@ def test_statistics_runs_exactly_five_welch_tests(responder_inputs):
     assert (statistics[["responder_n", "nonresponder_n"]] == 3).all().all()
     assert statistics["mean_difference"].tolist() == pytest.approx([5.0] * 5)
     assert statistics["significant"].all()
+    for column in STATISTICS_FLOAT_COLUMNS:
+        assert statistics[column].map(
+            lambda value: value == round(value, STATISTICS_DECIMAL_PLACES)
+        ).all()
 
 
 def test_analysis_writes_csv_and_combined_figure(responder_inputs, tmp_path):
