@@ -1,10 +1,12 @@
 # Immune Cell-Count Analysis
 
-This repository currently implements Part 1 of the analysis pipeline: converting
-the supplied CSV into a validated SQLite database that subsequent analyses can
-use as their trusted data source.
+This repository implements Parts 1 and 2 of the analysis pipeline: converting
+the supplied CSV into a validated SQLite database and exporting each immune
+cell population's relative frequency within its sample.
 
 ## Setup and data loading
+
+This project supports Python 3.12.
 
 From the repository root, run:
 
@@ -13,18 +15,28 @@ make setup
 make pipeline
 ```
 
+Start the interactive dashboard after generating the outputs:
+
+```bash
+make dashboard
+```
+
+Open `http://localhost:8000`. To choose another port, run `make dashboard
+PORT=3000`. In GitHub Codespaces, open the forwarded port from the Ports panel.
+The static website is live on GitHub Pages:
+[https://lennylin1998.github.io/teiko/](https://lennylin1998.github.io/teiko/).
+
 Equivalently, after installing `requirements.txt`, run `python load_data.py`.
 The loader creates `cell-count.db` in the repository root. It is deterministic
-and safe to rerun: each run deletes the existing database and builds a clean one
-from scratch, so rows never accumulate between runs.
+and safe to rerun: each run builds a temporary database and replaces the old
+one only after a successful load, so rows never accumulate.
 
-The loader verifies the source column layout, allowed nullability and integer values. It
-also checks the expected 10,500 source rows, 52,500 database measurement rows,
-10,500 unique sample IDs, five populations, treatment days 0/7/14, database row
-and distinct-sample counts, treatment-day bounds, the sum
-of `b_cell`, declared SQLite types, and the primary key. Source responses are
-converted from `yes`/`no`/blank to `1`/`0`/SQL `NULL`. Any failure exits with
-a nonzero status and removes the incomplete database.
+Runtime validation is limited to the external input, `cell-count.csv`. It checks
+the source column layout, required values, integer fields, nonnegative population
+counts, positive per-sample totals, response values, 10,500 unique sample IDs,
+and treatment days 0/7/14. Source responses are converted from
+`yes`/`no`/blank to `1`/`0`/SQL `NULL`. The generated database also enforces its
+schema through SQLite constraints.
 
 ## Database schema
 
@@ -63,20 +75,27 @@ entities such as projects, subjects, and samples could be normalized into
 separate relational tables, with cell measurements stored in a related fact
 table. Indexes and partitioning could then be chosen for measured query patterns.
 
-The pipeline established here is:
+The pipeline is:
 
 ```text
-cell-count.csv -> load_data.py -> validated cell-count.db -> Parts 2-4
+cell-count.csv -> load_data.py -> validated cell-count.db
+                                      |
+                                      v
+                    relative-frequency.csv
 ```
 
-As later parts are implemented, their analysis commands can be appended to the
-`pipeline` target after the loader so downstream work only runs after validation.
+`make pipeline` runs the relative-frequency analysis only after Part 1 succeeds.
+The output has the columns `sample`, `total_count`, `population`, `count`, and
+`percentage`, with 52,500 rows (five populations for each of 10,500 samples).
+`analyze_frequencies.py` calculates totals with `SUM(count) OVER (PARTITION BY
+sample)`. Pipeline correctness—including database shape, source-to-database
+mapping, frequency totals, percentage sums, and CSV output—is covered by pytest.
 
 ## Code structure
 
-`load_data.py` coordinates the clean database rebuild and provides the required
-root executable. The `cell_pipeline` package separates its supporting concerns:
-`schema.py` defines the source columns and SQLite schema, `transform.py` reads
-and reshapes the CSV, and `validation.py` verifies the loaded database. This
-keeps the loading workflow visible in the required script while making its
-supporting operations independently reusable and testable.
+`load_data.py` and `analyze_frequencies.py` are thin executable entry points.
+The `cell_pipeline` package separates source validation, transformations,
+database loading, schema definitions, and frequency analysis into reusable
+modules. The `tests/` directory verifies those modules with small fixtures and
+temporary databases and files. Run the tests with `make test`, or run tests and
+the production pipeline together with `make check`.

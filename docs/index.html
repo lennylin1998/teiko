@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive immune cell-count analysis dashboard">
+  <title>Loblaw Bio — Immune Cell Analysis</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <button class="menu-button" id="menu-button" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="brand-mark">LB</span><div><strong>Loblaw Bio</strong><small>Clinical analytics</small></div></div>
+    <nav aria-label="Analysis sections">
+      <a href="#part2" data-view="part2"><span>02</span><div>Data Overview<small>Cell frequencies</small></div></a>
+      <a href="#part3" data-view="part3"><span>03</span><div>Statistical Analysis<small>Response comparison</small></div></a>
+      <a href="#part4" data-view="part4"><span>04</span><div>Subset Analysis<small>Baseline cohort</small></div></a>
+    </nav>
+    <p class="sidebar-note">Immune cell population analysis for the miraclib clinical trial.</p>
+  </aside>
+  <main>
+    <section class="view" id="part2">
+      <header class="page-header"><div><p class="eyebrow">Part 2 · Initial analysis</p><h1>Cell population frequencies</h1></div><a class="download" href="data/relative-frequency.csv" download>Download CSV</a></header>
+      <p class="intro">Relative frequency of each immune cell population within every sample.</p>
+      <div class="metrics" aria-label="Dataset summary"><article><span>Samples</span><strong id="sample-count">—</strong></article><article><span>Populations</span><strong id="population-count">—</strong></article><article><span>Measurements</span><strong id="row-count">—</strong></article></div>
+      <section class="table-card">
+        <div class="controls"><label>Search samples<input id="sample-search" type="search" placeholder="e.g. sample00042"></label><label>Population<select id="population-filter"><option value="">All populations</option></select></label><label>Rows per page<select id="page-size"><option>25</option><option selected>50</option><option>100</option></select></label></div>
+        <div class="status" id="status" role="status">Loading relative-frequency data…</div>
+        <div class="table-wrap"><table><thead><tr><th><button data-sort="sample">Sample</button></th><th><button data-sort="total_count">Total count</button></th><th><button data-sort="population">Population</button></th><th><button data-sort="count">Count</button></th><th><button data-sort="percentage">Percentage</button></th></tr></thead><tbody id="frequency-body"></tbody></table></div>
+        <footer class="pagination"><span id="page-summary"></span><div><button id="previous-page" type="button">Previous</button><button id="next-page" type="button">Next</button></div></footer>
+      </section>
+    </section>
+    <section class="view placeholder" id="part3" hidden><p class="eyebrow">Part 3 · Statistical analysis</p><h1>Predicting treatment response</h1><div class="coming-soon"><span>03</span><h2>Analysis coming soon</h2><p>This view will compare immune-cell frequencies in melanoma PBMC samples from miraclib responders and non-responders, including population boxplots and statistical significance tests.</p></div></section>
+    <section class="view placeholder" id="part4" hidden><p class="eyebrow">Part 4 · Data subset analysis</p><h1>Baseline cohort exploration</h1><div class="coming-soon"><span>04</span><h2>Analysis coming soon</h2><p>This view will summarize baseline melanoma PBMC samples treated with miraclib by project, response status, and sex.</p></div></section>
+  </main>
+  <div class="scrim" id="scrim"></div>
+  <script src="app.js"></script>
+</body>
+</html>

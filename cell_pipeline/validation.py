@@ -1,48 +1,63 @@
-"""Validation of the loaded SQLite database."""
+"""Runtime validation for the external cell-count CSV."""
 
-import sqlite3
+from collections.abc import Collection
 
 import pandas as pd
 
-from .schema import CELL_POPULATIONS, DATABASE_TEXT_COLUMNS, INTEGER_COLUMNS
+from .schema import CELL_POPULATIONS, INTEGER_COLUMNS, SOURCE_COLUMNS
 
 
-def validate_database(
-    connection: sqlite3.Connection,
-    source_frame: pd.DataFrame,
-    long_frame: pd.DataFrame,
+def validate_source(
+    frame: pd.DataFrame,
+    *,
+    expected_rows: int | None = None,
+    expected_treatment_days: Collection[int] | None = None,
 ) -> None:
-    actual = tuple(connection.execute("""
-        SELECT COUNT(*), COUNT(DISTINCT sample), COUNT(DISTINCT population),
-               MIN(time_from_treatment_start), MAX(time_from_treatment_start),
-               SUM(CASE WHEN population = 'b_cell' THEN count ELSE 0 END)
-        FROM samples
-    """).fetchone())
-    expected = (
-        len(long_frame), source_frame["sample"].nunique(), len(CELL_POPULATIONS),
-        int(source_frame["time_from_treatment_start"].min()),
-        int(source_frame["time_from_treatment_start"].max()),
-        int(source_frame["b_cell"].sum()),
-    )
-    if actual != expected:
-        raise ValueError(f"Database validation failed: expected {expected}, found {actual}")
+    """Validate the untrusted source data before transformation and loading."""
+    if list(frame.columns) != SOURCE_COLUMNS:
+        raise ValueError(
+            "Unexpected CSV columns. Expected, in order: " + ", ".join(SOURCE_COLUMNS)
+        )
 
-    schema = {
-        row[1]: (row[2], row[5]) for row in connection.execute("PRAGMA table_info(samples)")
-    }
-    expected_types = {
-        **{column: "TEXT" for column in DATABASE_TEXT_COLUMNS},
-        "population": "TEXT",
-        **{column: "INTEGER" for column in INTEGER_COLUMNS if column not in CELL_POPULATIONS},
-        "count": "INTEGER",
-        "response": "INTEGER",
-    }
-    key_positions = {"sample": 1, "population": 2}
-    for column, expected_type in expected_types.items():
-        actual_type, key_position = schema.get(column, (None, None))
-        if actual_type != expected_type:
+    required = [column for column in SOURCE_COLUMNS if column != "response"]
+    missing = [column for column in required if frame[column].isna().any()]
+    if missing:
+        raise ValueError(f"CSV contains missing values in: {', '.join(missing)}")
+
+    numeric_columns: dict[str, pd.Series] = {}
+    for column in INTEGER_COLUMNS:
+        try:
+            numeric = pd.to_numeric(frame[column], errors="raise")
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"Column {column!r} contains non-numeric values") from error
+        if numeric.isna().any() or not (numeric % 1 == 0).all():
+            raise ValueError(f"Column {column!r} contains non-integer values")
+        numeric_columns[column] = numeric
+
+    negative_populations = [
+        column for column in CELL_POPULATIONS if (numeric_columns[column] < 0).any()
+    ]
+    if negative_populations:
+        raise ValueError(
+            "Population counts must be nonnegative in: " + ", ".join(negative_populations)
+        )
+    population_totals = sum(numeric_columns[column] for column in CELL_POPULATIONS)
+    if (population_totals <= 0).any():
+        raise ValueError("Every sample must have a positive total population count")
+
+    invalid_responses = set(frame["response"].dropna().unique()) - {"yes", "no"}
+    if invalid_responses:
+        raise ValueError(f"Unexpected response values: {sorted(invalid_responses)}")
+
+    if expected_rows is not None and len(frame) != expected_rows:
+        raise ValueError(f"Expected {expected_rows:,} CSV rows, found {len(frame):,}")
+    if frame["sample"].duplicated().any():
+        raise ValueError("Source CSV contains duplicate sample values")
+
+    if expected_treatment_days is not None:
+        actual_days = set(numeric_columns["time_from_treatment_start"].astype(int))
+        expected_days = set(expected_treatment_days)
+        if actual_days != expected_days:
             raise ValueError(
-                f"Database column {column!r} has type {actual_type!r}, expected {expected_type}"
+                f"Expected treatment days {sorted(expected_days)}; found {sorted(actual_days)}"
             )
-        if key_position != key_positions.get(column, 0):
-            raise ValueError(f"Database column {column!r} has an incorrect primary-key position")
